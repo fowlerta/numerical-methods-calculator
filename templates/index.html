@@ -5,21 +5,26 @@
   <title>Numerical Methods Pro</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2"></script>
+  <style>
+    body { margin: 20px; background: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+    .main-grid { max-width: 1400px; margin: 0 auto; }
+    canvas { width: 100% !important; height: 500px !important; background: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+  </style>
 </head>
 <body>
-  <h1>Numerical Methods Calculator Pro</h1>
-  <p class="subtitle">Root Finding • Interpolation • Differentiation • Integration</p>
+  <h1 style="text-align:center; color:#2c3e50;">Numerical Methods Calculator Pro</h1>
+  <p class="subtitle" style="text-align:center; color:#7f8c8d;">Root Finding • Interpolation • Differentiation • Integration</p>
 
-  <div class="main-grid">
-    <div class="card input-card">
-      <h2>Input</h2>
+  <div class="main-grid" style="display:grid; grid-template-columns:1fr 1.4fr; gap:30px; margin-top:30px;">
+    <div class="card input-card" style="background:white; padding:25px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+      <h2 style="margin-top:0; color:#2c3e50;">Input</h2>
       <form id="calcForm">
         <label>Function f(x):</label>
-        <input type="text" id="function" value="x**3 - x - 2" placeholder="e.g. sin(x), e**x, x**2 + pi">
+        <input type="text" id="function" value="x**3 - x - 2" placeholder="e.g. sin(x), e**x, x**2 + pi" style="width:100%; padding:10px; font-size:16px;">
 
-        <label>Method:</label>
-        <select id="method" onchange="toggleInputs()">
+        <label style="margin-top:15px; display:block;">Method:</label>
+        <select id="method" onchange="toggleInputs()" style="width:100%; padding:10px; font-size:16px;">
           <option value="newton">Newton-Raphson</option>
           <option value="bisection">Bisection</option>
           <option value="lagrange">Lagrange Interpolation</option>
@@ -29,48 +34,45 @@
           <option value="simpson38">Simpson 3/8 Rule</option>
         </select>
 
-        <div id="dynamicInputs"></div>
+        <div id="dynamicInputs" style="margin-top:15px;"></div>
 
-        <div id="newtonInputs" style="display:none;">
+        <div id="newtonInputs" style="display:none; margin-top:15px;">
           <label>Initial guess x₀:</label>
           <input type="number" step="any" id="x0" value="1.5">
         </div>
-
-        <div id="bisectionInputs" style="display:none;">
+        <div id="bisectionInputs" style="display:none; margin-top:15px;">
           <label>Interval [a, b]:</label>
-          <div class="inline">
-            <input type="number" step="any" id="a" value="1">
-            <input type="number" step="any" id="b" value="2">
+          <div style="display:flex; gap:10px;">
+            <input type="number" step="any" id="a" value="1" style="flex:1;">
+            <input type="number" step="any" id="b" value="2" style="flex:1;">
           </div>
         </div>
 
-        <label>Tolerance:</label>
+        <label style="margin-top:15px; display:block;">Tolerance:</label>
         <input type="number" step="any" id="tol" value="1e-8">
 
-        <button type="button" onclick="compute()">Compute</button>
+        <button type="button" onclick="compute()" style="margin-top:20px; width:100%; padding:12px; background:#3498db; color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer;">
+          Compute
+        </button>
       </form>
 
-      <div style="margin-top:20px; font-size:0.9em; color:#666;">
-        <strong>Examples:</strong><br>
-        <button onclick="setFunc('sin(x)')">sin(x)</button>
-        <button onclick="setFunc('e**x - 3*x')">e^x - 3x</button>
-        <button onclick="setFunc('x**2 + cos(x)')">x² + cos(x)</button>
+      <div style="margin-top:25px; font-size:0.9em; color:#666;">
+        <strong>Examples:</strong><br><br>
+        <button onclick="setFunc('sin(x)')" style="margin:5px; padding:8px 12px;">sin(x)</button>
+        <button onclick="setFunc('e**x - 3*x')" style="margin:5px; padding:8px 12px;">e^x - 3x</button>
+        <button onclick="setFunc('x**2 + cos(x)')" style="margin:5px; padding:8px 12px;">x² + cos(x)</button>
+        <button onclick="setFunc('log(x+3)')" style="margin:5px; padding:8px 12px;">ln(x+3)</button>
       </div>
     </div>
 
-    <div class="card output-card">
-      <h2>Result & Graph</h2>
-      <div id="resultText">Click Compute to begin...</div>
+    <div class="card output-card" style="background:white; padding:25px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+      <h2 style="margin-top:0; color:#2c3e50;">Result & Graph</h2>
+      <div id="resultText" style="margin-bottom:20px; min-height:60px; font-size:16px;">Click Compute to begin...</div>
       <canvas id="graphCanvas"></canvas>
     </div>
   </div>
 
 <script>
-// Your full enhanced JS goes here — I'll send it next message if too long
-// But here’s the key part: it now draws tangents, trapezoids, points, etc.
-</script>
-<script>
-// Full enhanced frontend with graphs for EVERY method
 let chart = null;
 
 function setFunc(str) {
@@ -90,14 +92,14 @@ function toggleInputs() {
     document.getElementById('bisectionInputs').style.display = 'block';
   } else if (['trap', 'simpson13', 'simpson38'].includes(method)) {
     dyn.innerHTML = `
-      <label>a:</label><input type="number" step="any" id="a" value="-1">
-      <label>b:</label><input type="number" step="any" id="b" value="1">
-      <label>n (intervals):</label><input type="number" id="n" value="100">
+      <label>a:</label><input type="number" step="any" id="a" value="-2">
+      <label>b:</label><input type="number" step="any" id="b" value="2">
+      <label>n (intervals):</label><input type="number" id="n" value="100" min="2">
     `;
   } else if (method === 'lagrange') {
     dyn.innerHTML = `
-      <label>X points:</label><input type="text" id="x_points" value="-1,0,1">
-      <label>Y points:</label><input type="text" id="y_points" value="2,1,2">
+      <label>X points (comma-separated):</label><input type="text" id="x_points" value="-2,-1,0,1,2">
+      <label>Y points (comma-separated):</label><input type="text" id="y_points" value="1,1,0,1,4">
       <label>Evaluate at x:</label><input type="number" step="any" id="x_eval" value="0.5">
     `;
   } else if (method === 'diff') {
@@ -121,7 +123,6 @@ async function compute() {
     max_iter: 100
   };
 
-  // Fill dynamic fields...
   if (data.method === 'newton') data.x0 = document.getElementById('x0').value;
   if (data.method === 'bisection') { data.a = document.getElementById('a').value; data.b = document.getElementById('b').value; }
   if (['trap','simpson13','simpson38'].includes(data.method)) {
@@ -151,25 +152,25 @@ async function compute() {
 function displayResult(r) {
   const out = document.getElementById('resultText');
   if (r.error) {
-    out.innerHTML = `<p class="error">Error: ${r.error}</p>`;
+    out.innerHTML = `<p style="color:red; font-weight:bold;">Error: ${r.error}</p>`;
     if (chart) chart.destroy();
     return;
   }
 
-  let html = `<h3>${r.method || 'Result'}</h3>`;
-  if (r.root !== undefined) html += `<p><strong>Root ≈</strong> ${r.root.toFixed(8)}</p>`;
-  if (r.value !== undefined) html += `<p><strong>Value ≈</strong> ${r.value.toFixed(8)}</p>`;
-  if (r.result !== undefined) html += `<p><strong>Integral ≈</strong> ${r.result.toFixed(8)}</p>`;
+  let html = `<h3 style="margin:0 0 10px 0; color:#2c3e50;">${r.method || 'Result'}</h3>`;
+  if (r.root !== undefined) html += `<p><strong>Root ≈</strong> ${Number(r.root).toFixed(10)}</p>`;
+  if (r.value !== undefined) html += `<p><strong>Value ≈</strong> ${Number(r.value).toFixed(10)}</p>`;
+  if (r.result !== undefined) html += `<p><strong>Integral ≈</strong> ${Number(r.result).toFixed(10)}</p>`;
 
-  if (r.iterations) {
-    html += '<table class="iteration-table"><thead><tr><th>Iter</th><th>x</th><th>f(x)</th></tr></thead><tbody>';
+  if (r.iterations && r.iterations.length > 0) {
+    html += '<table style="width:100%; border-collapse:collapse; margin-top:10px;"><thead><tr style="background:#3498db; color:white;"><th>Iter</th><th>x</th><th>f(x)</th></tr></thead><tbody>';
     r.iterations.forEach(it => {
-      html += `<tr><td>${it.iter}</td><td>${Number(it.x || it.c).toFixed(6)}</td><td>${it['f(x)'] ? Number(it['f(x)']).toFixed(8) : '-'}</td></tr>`;
+      const xVal = it.x !== undefined ? it.x : it.c;
+      html += `<tr><td>${it.iter}</td><td>${Number(xVal).toFixed(8)}</td><td>${it['f(x)'] ? Number(it['f(x)']).toExponential(6) : '-'}</td></tr>`;
     });
     html += '</tbody></table>';
   }
   out.innerHTML = html;
-
   drawGraph(r.plot);
 }
 
@@ -180,16 +181,24 @@ function drawGraph(plot) {
   const ctx = document.getElementById('graphCanvas').getContext('2d');
   const annotations = [];
 
-  // Add extra visual elements
   plot.extra.forEach(item => {
     if (item.type === 'point') {
       annotations.push({
         type: 'point',
         xValue: item.x,
-        yValue: item.y || 0,
-        backgroundColor: item.label === 'Root' ? 'red' : 'blue',
-        radius: 6,
-        label: { content: item.label || '', enabled: true }
+        yValue: item.y,
+        backgroundColor: item.label === 'Root' ? '#e74c3c' : 
+                        item.label === 'P(x)' ? '#9b59b6' : '#3498db',
+        radius: item.label === 'Root' ? 12 : item.label === 'P(x)' ? 10 : 8,
+        borderColor: 'white',
+        borderWidth: item.label === 'Root' ? 4 : 3,
+        label: { 
+          content: item.label || '',
+          enabled: true,
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          color: 'white',
+          font: { size: 12 }
+        }
       });
     }
     if (item.type === 'vline') {
@@ -197,8 +206,31 @@ function drawGraph(plot) {
         type: 'line',
         xMin: item.x, xMax: item.x,
         borderColor: 'rgba(0,0,0,0.3)',
-        borderWidth: 1,
-        borderDash: [5,5]
+        borderWidth: 2,
+        borderDash: [8, 8],
+        label: { content: item.x.toFixed(2), enabled: true, position: 'top' }
+      });
+    }
+    if (item.type === 'tangent') {
+      const delta = Math.abs(plot.x[plot.x.length-1] - plot.x[0]) * 0.25;
+      annotations.push({
+        type: 'line',
+        xMin: item.x - delta,
+        xMax: item.x + delta,
+        yMin: item.y + item.slope * (-delta),
+        yMax: item.y + item.slope * delta,
+        borderColor: '#e67e22',
+        borderWidth: 4,
+        label: { content: 'Tangent Line', enabled: true, backgroundColor: '#e67e22' }
+      });
+      annotations.push({
+        type: 'point',
+        xValue: item.x,
+        yValue: item.y,
+        backgroundColor: '#e67e22',
+        radius: 10,
+        borderColor: 'white',
+        borderWidth: 3
       });
     }
   });
@@ -210,21 +242,36 @@ function drawGraph(plot) {
       datasets: [{
         label: 'f(x)',
         data: plot.y,
-        borderColor: 'rgb(52, 152, 219)',
-        tension: 0.1,
-        pointRadius: 0
+        borderColor: '#3498db',
+        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+        tension: 0.3,
+        pointRadius: 0,
+        fill: false
       }]
     },
     options: {
-      plugins: { annotation: { annotations } },
-      scales: { x: { title: { display: true, text: 'x' } } }
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        annotation: { annotations },
+        legend: { display: false },
+        tooltip: { enabled: true }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(0,0,0,0.1)' },
+          title: { display: true, text: 'x', font: { size: 14 } }
+        },
+        y: {
+          grid: { color: 'rgba(0,0,0,0.1)' },
+          title: { display: true, text: 'f(x)', font: { size: 14 } }
+        }
+      }
     }
   });
 }
 
-// Init
 toggleInputs();
 </script>
 </body>
-
 </html>
