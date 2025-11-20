@@ -6,7 +6,7 @@ import numpy as np
 app = Flask(__name__)
 x_sym = Symbol('x')
 
-# Supported functions for user input
+# Supported functions
 allowed_funcs = {
     'sin': sin, 'cos': cos, 'tan': tan,
     'exp': exp, 'log': log, 'sqrt': sqrt,
@@ -16,13 +16,12 @@ allowed_funcs = {
 def safe_func(expr_str):
     try:
         expr = sympify(expr_str, locals=allowed_funcs)
-        # Convert to fast numpy function
         f = lambdify(x_sym, expr, modules=['numpy', 'math'])
         return f, expr
     except Exception as e:
-        raise ValueError(f"Invalid function: {str(e)}. Use x as variable and math functions like sin(x), pi, e, etc.")
+        raise ValueError(f"Invalid function: {str(e)}. Use x as variable and functions like sin(x), pi, e, etc.")
 
-# Import your methods (keep your folder structure)
+# Import methods
 from methods.bisection import bisection
 from methods.newton_raphson import newton_raphson
 from methods.lagrange import lagrange_interpolation
@@ -49,18 +48,18 @@ def compute():
 
     tol = float(data.get('tolerance', 1e-6))
     max_iter = int(data.get('max_iter', 100))
-
     result = {}
     plot_data = {"x": [], "y": [], "extra": []}
 
     try:
+        # === ROOT FINDING ===
         if method == "newton":
             x0 = float(data['x0'])
             res = newton_raphson(f, x0, tol, max_iter)
             result = {**res, "method": "Newton-Raphson"}
             root = res.get("root")
             if root is not None:
-                plot_data["extra"].append({"type": "point", "x": root, "y": 0, "label": "Root"})
+                plot_data["extra"].append({"type": "point", "x": root, "y": f(root), "label": "Root"})
 
         elif method == "bisection":
             a, b = float(data['a']), float(data['b'])
@@ -68,10 +67,13 @@ def compute():
             result = {**res, "method": "Bisection"}
             root = res.get("root")
             if root is not None:
-                plot_data["extra"].append({"type": "point", "x": root, "y": 0, "label": "Root"})
-                plot_data["extra"].append({"type": "vline", "x": a})
-                plot_data["extra"].append({"type": "vline", "x": b})
+                plot_data["extra"].append({"type": "point", "x": root, "y": f(root), "label": "Root"})
+                plot_data["extra"].extend([
+                    {"type": "vline", "x": a},
+                    {"type": "vline", "x": b}
+                ])
 
+        # === LAGRANGE ===
         elif method == "lagrange":
             xs = [float(x) for x in data['x_points'].split(',')]
             ys = [float(y) for y in data['y_points'].split(',')]
@@ -81,6 +83,7 @@ def compute():
             plot_data["extra"] = [{"type": "point", "x": x, "y": y, "label": "Data"} for x, y in zip(xs, ys)]
             plot_data["extra"].append({"type": "point", "x": x_eval, "y": value, "label": "P(x)"})
 
+        # === DIFFERENTIATION ===
         elif method == "diff":
             x = float(data['x'])
             h = 1e-5
@@ -94,6 +97,7 @@ def compute():
             result = {"method": f"Numerical Differentiation ({diff_method})", "value": value}
             plot_data["extra"].append({"type": "tangent", "x": x, "y": f(x), "slope": value})
 
+        # === INTEGRATION ===
         elif method in ["trap", "simpson13", "simpson38"]:
             a, b = float(data['a']), float(data['b'])
             n = int(data['n'])
@@ -101,25 +105,22 @@ def compute():
             if method == "trap":
                 value = trapezoidal(f, a, b, n)
                 result = {"method": "Trapezoidal Rule", "result": value}
-                plot_data["extra"].append({"type": "trapezoid", "a": a, "b": b, "n": n, "f": f})
             elif method == "simpson13":
-                if n % 2 != 0:
-                    n += 1  # make even
+                if n % 2 != 0: n += 1
                 value = simpson_one_third(f, a, b, n)
                 result = {"method": "Simpson 1/3 Rule", "result": value}
-            else:
-                if n % 3 != 0:
-                    n = ((n // 3) + 1) * 3
+            else:  # simpson38
+                if n % 3 != 0: n = ((n // 3) + 1) * 3
                 value = simpson_three_eighth(f, a, b, n)
                 result = {"method": "Simpson 3/8 Rule", "result": value}
 
-        # Generate plot data for all methods
-        xmin = -10
-        xmax = 10
+        # === PLOT DATA ===
+        xmin, xmax = -10, 10
         if method in ["trap", "simpson13", "simpson38"]:
-            xmin, xmax = float(data['a']), float(data['b'])
+            xmin, xmax = a, b
         elif method == "lagrange":
-            xmin, xmax = min(min(xs), x_eval) - 1, max(max(xs), x_eval) + 1
+            all_x = xs + [x_eval]
+            xmin, xmax = min(all_x) - 1, max(all_x) + 1
 
         x_vals = np.linspace(xmin, xmax, 500)
         y_vals = [f(x) for x in x_vals]
@@ -132,13 +133,13 @@ def compute():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-    
 
 
+# PERFECT FOR BOTH LOCAL + RENDER
 if __name__ == '__main__':
-    # For local testing
+    # Local development
     app.run(host='0.0.0.0', port=5000, debug=True)
 else:
-    # For Render.com (they set the PORT environment variable)
+    # Render / production
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
